@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - CRUD Servicios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
+            min-height: 100vh;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .notification-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 50;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+        }
+        .notification-box.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-gray-800 text-white shadow-lg py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Agile Solutions - Dashboard</h1>
+            <nav class="space-x-4 flex items-center">
+                <span class="text-sm font-light hidden sm:inline">Usuario: admin</span>
+                <button onclick="logout()" class="bg-red-600 text-white px-4 py-2 rounded-full font-semibold hover:bg-red-700 transition duration-300 shadow-md">
+                    Cerrar Sesión
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <h2 class="text-4xl font-extrabold text-gray-800 mb-8 text-center">Gestión de Servicios</h2>
+
+        <!-- CRUD Form -->
+        <div class="bg-white p-6 md:p-10 rounded-2xl shadow-xl mb-12">
+            <h3 id="formTitle" class="text-2xl font-semibold text-gray-700 mb-6">Añadir Nuevo Servicio</h3>
+            <form id="serviceForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- ID Update -->
+                <input type="hidden" id="serviceId">
+
+                <div class="col-span-1">
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Nombre del Servicio</label>
+                    <input type="text" id="name" required class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800" placeholder="Ej: Desarrollo Web Avanzado">
+                </div>
+
+                <div class="col-span-1">
+                    <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Precio (COP)</label>
+                    <input type="number" id="price" required min="0" step="1000" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800" placeholder="Ej: 1500000">
+                </div>
+
+                <div class="col-span-full">
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                    <textarea id="description" rows="3" required class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800" placeholder="Descripción detallada del servicio..."></textarea>
+                </div>
+
+                <div class="col-span-full flex justify-end space-x-4">
+                    <button type="button" id="cancelEditButton" class="hidden px-6 py-3 border border-gray-300 text-gray-700 rounded-full font-semibold hover:bg-gray-50 transition duration-300 shadow-sm" onclick="resetForm()">
+                        Cancelar Edición
+                    </button>
+                    <button type="submit" id="submitButton" class="px-8 py-3 bg-gray-800 text-white rounded-full font-semibold hover:bg-gray-700 transition duration-300 shadow-lg">
+                        Guardar Servicio
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista servicios -->
+        <div class="bg-white p-6 md:p-10 rounded-2xl shadow-xl table-container">
+            <h3 class="text-2xl font-semibold text-gray-700 mb-6">Servicios Actuales</h3>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Precio (COP)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Descripción</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="servicesTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Filas de servicios se insertarán aquí por JS -->
+                </tbody>
+            </table>
+            <div id="noServicesMessage" class="text-center py-8 text-gray-500 hidden">
+                Aún no hay servicios registrados. ¡Usa el formulario de arriba para agregar uno!
+            </div>
+        </div>
+    </main>
+
+    <!-- Contenedor de Notificaciones Personalizado -->
+    <div id="notification" class="notification-box bg-red-500 text-white"></div>
+
+    <script>
+        // --- Variables Globales ---
+        // Array para almacenar los servicios (Simula la base de datos)
+        let services = [];
+
+        // Variable para controlar si estamos en modo edición
+        let isEditing = false;
+        let editingId = null;
+
+        // --- Funciones de Utilidad ---
+
+        // Generador de ID simple (simulando UUID)
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2);
+        }
+
+        // Función para mostrar notificaciones
+        function showNotification(message, isError = false) {
+            const notificationBox = document.getElementById('notification');
+            notificationBox.textContent = message;
+            notificationBox.classList.remove('bg-red-500', 'bg-green-500');
+            notificationBox.classList.add(isError ? 'bg-red-500' : 'bg-green-500');
+            notificationBox.classList.add('show');
+
+            setTimeout(() => {
+                notificationBox.classList.remove('show');
+            }, 3000);
+        }
+
+        // Formateador de moneda
+        const formatter = new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0
+        });
+
+        // --- Funciones CRUD ---
+
+        // Leer (Read) y Renderizar la tabla
+        function renderServices() {
+            const tableBody = document.getElementById('servicesTableBody');
+            const noServicesMessage = document.getElementById('noServicesMessage');
+            tableBody.innerHTML = ''; // Limpiar tabla
+
+            if (services.length === 0) {
+                noServicesMessage.classList.remove('hidden');
+                return;
+            } else {
+                noServicesMessage.classList.add('hidden');
+            }
+
+            services.forEach(service => {
+                const row = tableBody.insertRow();
+                row.className = 'hover:bg-gray-50 transition duration-150';
+
+                // ID (Truncado para mejor visualización)
+                const idCell = row.insertCell();
+                idCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500';
+                idCell.textContent = service.id.substring(0, 5); // Mostrar solo los primeros 5 caracteres
+
+                // Nombre
+                const nameCell = row.insertCell();
+                nameCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
+                nameCell.textContent = service.name;
+
+                // Precio (Oculto en móvil)
+                const priceCell = row.insertCell();
+                priceCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell';
+                priceCell.textContent = formatter.format(service.price);
+
+                // Descripción (Oculto en tablet/móvil)
+                const descCell = row.insertCell();
+                descCell.className = 'px-6 py-4 text-sm text-gray-500 max-w-xs truncate hidden md:table-cell';
+                descCell.textContent = service.description;
+
+                // Acciones
+                const actionCell = row.insertCell();
+                actionCell.className = 'px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2';
+
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Editar';
+                editButton.className = 'text-blue-600 hover:text-blue-900 transition duration-150 font-semibold';
+                editButton.onclick = () => editService(service.id);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Eliminar';
+                deleteButton.className = 'text-red-600 hover:text-red-900 transition duration-150 ml-4 font-semibold';
+                deleteButton.onclick = () => deleteService(service.id);
+
+                actionCell.appendChild(editButton);
+                actionCell.appendChild(deleteButton);
+            });
+        }
+
+        // Añadir o Actualizar (Create/Update)
+        document.getElementById('serviceForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value.trim();
+            const price = parseFloat(document.getElementById('price').value);
+            const description = document.getElementById('description').value.trim();
+
+            if (!name || isNaN(price) || price < 0 || !description) {
+                showNotification('Todos los campos son obligatorios y el precio debe ser un número positivo.', true);
+                return;
+            }
+
+            if (isEditing) {
+                // Modo Edición (Update)
+                const index = services.findIndex(s => s.id === editingId);
+                if (index !== -1) {
+                    services[index] = {
+                        id: editingId,
+                        name,
+                        price,
+                        description
+                    };
+                    showNotification(`Servicio "${name}" actualizado con éxito.`, false);
+                } else {
+                    showNotification('Error al encontrar el servicio para actualizar.', true);
+                }
+            } else {
+                // Modo Creación (Create)
+                const newService = {
+                    id: generateId(),
+                    name,
+                    price,
+                    description
+                };
+                services.push(newService);
+                showNotification(`Nuevo servicio "${name}" agregado con éxito.`, false);
+            }
+
+            // Actualizar UI y limpiar formulario
+            renderServices();
+            resetForm();
+        });
+
+        // Cargar datos en el formulario para editar
+        function editService(id) {
+            const service = services.find(s => s.id === id);
+            if (!service) {
+                showNotification('Servicio no encontrado.', true);
+                return;
+            }
+
+            // Rellenar formulario
+            document.getElementById('serviceId').value = service.id;
+            document.getElementById('name').value = service.name;
+            document.getElementById('price').value = service.price;
+            document.getElementById('description').value = service.description;
+
+            // Configurar modo edición
+            isEditing = true;
+            editingId = id;
+
+            // Actualizar UI del formulario
+            document.getElementById('formTitle').textContent = `Editar Servicio: ${service.name}`;
+            document.getElementById('submitButton').textContent = 'Actualizar Servicio';
+            document.getElementById('cancelEditButton').classList.remove('hidden');
+
+            // Scroll al formulario
+            document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Eliminar (Delete)
+        function deleteService(id) {
+            const index = services.findIndex(s => s.id === id);
+            if (index !== -1) {
+                const serviceName = services[index].name;
+                // Simulación de confirmación (usando lógica sin alert())
+                if (confirm(`¿Estás seguro de que quieres eliminar el servicio "${serviceName}"?`)) {
+                    services.splice(index, 1);
+                    showNotification(`Servicio "${serviceName}" eliminado correctamente.`, false);
+                    renderServices();
+                    resetForm(); // Limpiar si se estaba editando el servicio eliminado
+                }
+            } else {
+                showNotification('Error al encontrar el servicio para eliminar.', true);
+            }
+        }
+
+        // Resetear el formulario a modo "Crear"
+        function resetForm() {
+            document.getElementById('serviceForm').reset();
+            document.getElementById('serviceId').value = '';
+            isEditing = false;
+            editingId = null;
+
+            // Restablecer UI del formulario
+            document.getElementById('formTitle').textContent = 'Añadir Nuevo Servicio';
+            document.getElementById('submitButton').textContent = 'Guardar Servicio';
+            document.getElementById('cancelEditButton').classList.add('hidden');
+        }
+
+        // Función para cerrar sesión
+        function logout() {
+            window.location.href = 'login.html';
+        }
+
+        // --- Inicialización (Cargar datos de ejemplo y renderizar) ---
+
+        // Cargar datos iniciales
+        function loadInitialData() {
+            services = [
+                { id: generateId(), name: "Desarrollo de Apps Móviles", price: 5000000, description: "Creación de aplicaciones nativas para iOS y Android con Flutter o React Native." },
+                { id: generateId(), name: "Consultoría RPA", price: 1800000, description: "Análisis y automatización de procesos repetitivos utilizando Robotic Process Automation." },
+                { id: generateId(), name: "Estrategia de Cloud Computing", price: 3200000, description: "Diseño e implementación de infraestructura en la nube (AWS/Azure/GCP)." }
+            ];
+            renderServices();
+        }
+
+        // Simulación de confirmación para evitar alert/confirm nativos que no funcionan bien en iframes
+        function confirm(message) {
+            return window.confirm(message); // En este entorno limitado, window.confirm es la mejor alternativa a un modal complejo.
+        }
+
+        // Cargar los datos al iniciar la página
+        window.onload = loadInitialData;
+    </script>
+</body>
+</html>
