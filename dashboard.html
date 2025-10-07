@@ -110,7 +110,7 @@
 
     <script>
         // --- Variables Globales ---
-        // Array para almacenar los servicios (Simula la base de datos)
+        // Array para almacenar los servicios
         let services = [];
 
         // Variable para controlar si estamos en modo edición
@@ -119,7 +119,7 @@
 
         // --- Funciones de Utilidad ---
 
-        // Generador de ID simple (simulando UUID)
+        // Generador de ID simple
         function generateId() {
             return Date.now().toString(36) + Math.random().toString(36).substring(2);
         }
@@ -146,7 +146,7 @@
 
         // --- Funciones CRUD ---
 
-        // Leer (Read) y Renderizar la tabla
+        // Leer y Renderizar la tabla
         function renderServices() {
             const tableBody = document.getElementById('servicesTableBody');
             const noServicesMessage = document.getElementById('noServicesMessage');
@@ -216,7 +216,6 @@
             }
 
             if (isEditing) {
-                // Modo Edición (Update)
                 const index = services.findIndex(s => s.id === editingId);
                 if (index !== -1) {
                     services[index] = {
@@ -230,7 +229,6 @@
                     showNotification('Error al encontrar el servicio para actualizar.', true);
                 }
             } else {
-                // Modo Creación (Create)
                 const newService = {
                     id: generateId(),
                     name,
@@ -241,7 +239,6 @@
                 showNotification(`Nuevo servicio "${name}" agregado con éxito.`, false);
             }
 
-            // Actualizar UI y limpiar formulario
             renderServices();
             resetForm();
         });
@@ -254,22 +251,18 @@
                 return;
             }
 
-            // Rellenar formulario
             document.getElementById('serviceId').value = service.id;
             document.getElementById('name').value = service.name;
             document.getElementById('price').value = service.price;
             document.getElementById('description').value = service.description;
 
-            // Configurar modo edición
             isEditing = true;
             editingId = id;
 
-            // Actualizar UI del formulario
             document.getElementById('formTitle').textContent = `Editar Servicio: ${service.name}`;
             document.getElementById('submitButton').textContent = 'Actualizar Servicio';
             document.getElementById('cancelEditButton').classList.remove('hidden');
 
-            // Scroll al formulario
             document.getElementById('formTitle').scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -278,12 +271,11 @@
             const index = services.findIndex(s => s.id === id);
             if (index !== -1) {
                 const serviceName = services[index].name;
-                // Simulación de confirmación (usando lógica sin alert())
                 if (confirm(`¿Estás seguro de que quieres eliminar el servicio "${serviceName}"?`)) {
                     services.splice(index, 1);
                     showNotification(`Servicio "${serviceName}" eliminado correctamente.`, false);
                     renderServices();
-                    resetForm(); // Limpiar si se estaba editando el servicio eliminado
+                    resetForm();
                 }
             } else {
                 showNotification('Error al encontrar el servicio para eliminar.', true);
@@ -297,7 +289,6 @@
             isEditing = false;
             editingId = null;
 
-            // Restablecer UI del formulario
             document.getElementById('formTitle').textContent = 'Añadir Nuevo Servicio';
             document.getElementById('submitButton').textContent = 'Guardar Servicio';
             document.getElementById('cancelEditButton').classList.add('hidden');
@@ -308,7 +299,6 @@
             window.location.href = 'login.html';
         }
 
-        // --- Inicialización (Cargar datos de ejemplo y renderizar) ---
 
         // Cargar datos iniciales
         function loadInitialData() {
@@ -320,12 +310,10 @@
             renderServices();
         }
 
-        // Simulación de confirmación para evitar alert/confirm nativos que no funcionan bien en iframes
         function confirm(message) {
-            return window.confirm(message); // En este entorno limitado, window.confirm es la mejor alternativa a un modal complejo.
+            return window.confirm(message);
         }
 
-        // Cargar los datos al iniciar la página
         window.onload = loadInitialData;
     </script>
 </body>

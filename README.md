@@ -28,12 +28,11 @@ Cualquier otra combinación resultará en un mensaje de error.
 🛠️ Cómo Ejecutar Localmente
 Dado que esta aplicación se basa en archivos HTML estáticos y JavaScript, es muy fácil de ejecutar:
 
-Opción 1: Abrir directamente el archivo
-Descarga o copia los archivos login.html y dashboard.html.
+* Descarga o copia los archivos login.html y dashboard.html.
 
-Haz doble clic en el archivo login.html.
+* Haz doble clic en el archivo login.html.
 
-El archivo se abrirá automáticamente en tu navegador predeterminado.
+* El archivo se abrirá automáticamente en tu navegador predeterminado.
 
 
 ⚙️ Funcionalidades del Dashboard (dashboard.html)
@@ -45,7 +44,7 @@ Descripción
 
 Crear (C)
 
-Usar el formulario superior para añadir un nuevo servicio (Nombre, Precio y Descripción).
+Usa el formulario superior para añadir un nuevo servicio (Nombre, Precio y Descripción).
 
 Leer (R)
 
@@ -59,4 +58,4 @@ Eliminar (D)
 
 El botón "Eliminar" solicita una confirmación y luego remueve el servicio de la lista.
 
-Nota sobre la persistencia: La información de los servicios se guarda únicamente en el array services de JavaScript, por lo que los datos se perderán cada vez que recargues la página. Para mantener los datos permanentemente, se requeriría una base de datos real (como Firestore o MySQL).
+Nota sobre la persistencia: La información de los servicios se guarda únicamente en el array services de JavaScript, por lo que los datos se perderán cada vez que la página se recargue. Para mantener los datos permanentemente, se requeriría una base de datos real (como Firestore o MySQL).
